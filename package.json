@@ -1,0 +1,26 @@
+{
+  "name": "05-diet-control",
+  "version": "1.0.0",
+  "description": "Backend service to control your diet",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts"
+  },
+  "keywords": [],
+  "author": "Ramon Borges",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cookie": "^9.1.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.24.3",
+    "knex": "^3.0.1",
+    "pg": "^8.11.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.8",
+    "sqlite3": "^5.1.6",
+    "tsx": "^3.14.0",
+    "typescript": "^5.2.2"
+  }
+}
