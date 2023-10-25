@@ -1,2 +1,6 @@
 # Dependencies 
 node_modules
+
+# Database
+db/db.sqlite
+db/test.sqlite
