@@ -4,7 +4,8 @@
   "description": "Backend service to control your diet",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "knex": "node --no-warnings --loader tsx ./node_modules/.bin/knex"
   },
   "keywords": [],
   "author": "Ramon Borges",
