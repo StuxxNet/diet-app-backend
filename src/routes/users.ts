@@ -1,30 +1,12 @@
-import { FastifyInstance } from 'fastify'
+import { FastifyInstance, FastifyRequest } from 'fastify'
 import { knex } from '../database'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
+import { checkSessionIdExists } from '../prehandlers/check-session-id-exists'
+import { checkUserMatchSessionid } from '../prehandlers/check-user-match-session-id'
 
 
 export async function usersRoutes(app: FastifyInstance) {
-    app.get('/', async () => {
-        const users = await knex('users').select('')
-
-        return { users }
-    })
-
-    app.get('/:id', async (request) => {
-        const getUsersParamsSchema = z.object({
-            id: z.string().uuid()
-        })
-
-        const { id } = getUsersParamsSchema.parse(request.params)
-
-        const user = await knex('users').select('*').where('id', id).first()
-
-        console.log(user)
-
-        return { user }
-    })
-
     app.post('/', async (request, reply) => {
         const createUserBodySchema = z.object({
             name: z.string(),
@@ -35,42 +17,62 @@ export async function usersRoutes(app: FastifyInstance) {
 
         const { name, born_date, email, password } = createUserBodySchema.parse(request.body)
 
-        await knex('users').insert({
-            id: randomUUID(),
-            name: name,
-            born_date: new Date(born_date),
-            email: email,
-            password: password
-        })
+        try {
+            await knex('users').insert({
+                id: randomUUID(),
+                name: name,
+                born_date: new Date(born_date),
+                email: email,
+                password: password
+            })
+        } catch(e) {
+            e.errno == '19' ? reply.status(409).send({
+                error: "User already exists"
+            }) : reply.status(500).send()
+        }
 
         return reply.status(201).send()
     })
 
-    app.put('/:id', async (request, reply) => {
+    app.get('/:id', { preHandler: [checkSessionIdExists, checkUserMatchSessionid] }, async (request, reply) => {
+        const getUsersParamsSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        const { id } = getUsersParamsSchema.parse(request.params)
+
+        const user = await knex('users').select('*').where('id', id).first()
+        
+        return reply.status(200).send(user)
+    })
+
+    app.put('/:id', { preHandler: [checkSessionIdExists, checkUserMatchSessionid] }, async (request, reply) => {
         const putUserParamsSchema = z.object({
             id: z.string().uuid()
         })
 
         const putUserBodySchema = z.object({
             name: z.string(),
-            born_date: z.string()
+            born_date: z.string(),
+            email: z.string(),
+            password: z.string()
         })
 
         const { id } = putUserParamsSchema.parse(request.params)
 
-        const { name, born_date } = putUserBodySchema.parse(request.body)
-
-        console.log(id, name, born_date)
+        const { name, born_date, email, password } = putUserBodySchema.parse(request.body)
 
         await knex('users').update({
             name: name,
-            born_date: new Date(born_date)
+            born_date: new Date(born_date),
+            email: email,
+            password: password
         }).where('id', id)
 
-        reply.status(204).send()
+        return reply.status(204).send()
     })
 
-    app.delete('/:id', async (request, reply) => {
+    app.delete('/:id', { preHandler: [checkSessionIdExists, checkUserMatchSessionid] }, async (request, reply) => {
         const deleteUserParamsSchema = z.object({
             id: z.string().uuid(),
         })
@@ -79,6 +81,10 @@ export async function usersRoutes(app: FastifyInstance) {
 
         await knex('users').delete('*').where('id', id)
 
-        reply.status(204).send()
+        reply.cookie('sessionId', id, {
+            path: "/",
+            maxAge: 0 // Set expired cookie
+        })
+        return reply.status(204).send()
     })
 }

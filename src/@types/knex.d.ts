@@ -6,6 +6,8 @@ declare module 'knex/types/tables' {
     id: string
     name: string
     born_date: string
+    email: string
+    password: string
   }
 
   interface Diet {
