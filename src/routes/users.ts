@@ -28,15 +28,19 @@ export async function usersRoutes(app: FastifyInstance) {
     app.post('/', async (request, reply) => {
         const createUserBodySchema = z.object({
             name: z.string(),
-            born_date: z.string()
+            born_date: z.string(),
+            email: z.string(),
+            password: z.string()
         })
 
-        const { name, born_date } = createUserBodySchema.parse(request.body)
+        const { name, born_date, email, password } = createUserBodySchema.parse(request.body)
 
         await knex('users').insert({
             id: randomUUID(),
             name: name,
-            born_date: new Date(born_date)
+            born_date: new Date(born_date),
+            email: email,
+            password: password
         })
 
         return reply.status(201).send()
