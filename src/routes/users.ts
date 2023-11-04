@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { checkSessionIdExists } from '../prehandlers/check-session-id-exists'
 import { checkUserMatchSessionid } from '../prehandlers/check-user-match-session-id'
+import { hashPassword } from '../utils/hash-password'
 
 
 export async function usersRoutes(app: FastifyInstance) {
@@ -16,6 +17,7 @@ export async function usersRoutes(app: FastifyInstance) {
         })
 
         const { name, born_date, email, password } = createUserBodySchema.parse(request.body)
+        const hashedPassword = await hashPassword(password, 10)
 
         try {
             await knex('users').insert({
@@ -23,7 +25,7 @@ export async function usersRoutes(app: FastifyInstance) {
                 name: name,
                 born_date: new Date(born_date),
                 email: email,
-                password: password
+                password: hashedPassword
             })
         } catch(e) {
             e.errno == '19' ? reply.status(409).send({
