@@ -21,14 +21,13 @@ declare module 'knex/types/tables' {
   interface DietSummary {
     id: string
     user_id: string
-    current_streak: number,
+    current_streak: number
     max_streak: number
   }
 
   export interface Tables {
-    users: User,
-    diets: Diet,
+    users: User
+    diets: Diet
     diet_summary: DietSummary
   }
 }
-
