@@ -13,6 +13,7 @@ declare module 'knex/types/tables' {
   interface Diet {
     id: string
     name: string
+    date: string
     description: string
     in_accordance: boolean
     user_id: string

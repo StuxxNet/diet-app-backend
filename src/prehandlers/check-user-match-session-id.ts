@@ -15,6 +15,7 @@ export async function checkUserMatchSessionid(
   if (sessionId !== id) {
     return reply.status(401).send({
       error: 'Unauthorized',
+      handler: 'checkUserMatchSessionid',
     })
   }
 }
