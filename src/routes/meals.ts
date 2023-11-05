@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { FastifyInstance } from 'fastify'
 import { string, z } from 'zod'
 import { checkSessionIdExists } from '../prehandlers/check-session-id-exists'
@@ -16,7 +17,6 @@ export async function mealsRoutes(app: FastifyInstance) {
         in_accordance: z.boolean(),
       })
 
-      // eslint-disable-next-line camelcase
       const { name, description, date, in_accordance } = postDietSchema.parse(
         request.body,
       )
@@ -29,7 +29,6 @@ export async function mealsRoutes(app: FastifyInstance) {
         name,
         date: new Date(date),
         description,
-        // eslint-disable-next-line camelcase
         in_accordance,
         user_id: sessionId,
       })
@@ -89,7 +88,6 @@ export async function mealsRoutes(app: FastifyInstance) {
 
       const { sessionId } = request.cookies
 
-      // eslint-disable-next-line camelcase
       const { name, description, date, in_accordance } =
         putMealByIdSchema.parse(request.body)
 
@@ -98,7 +96,6 @@ export async function mealsRoutes(app: FastifyInstance) {
           name,
           description,
           date: new Date(date),
-          // eslint-disable-next-line camelcase
           in_accordance,
         })
         .where('user_id', sessionId)
@@ -121,6 +118,63 @@ export async function mealsRoutes(app: FastifyInstance) {
       await knex('diet').delete('*').where({ id, user_id: sessionId })
 
       return reply.status(204).send()
+    },
+  )
+
+  app.get(
+    '/total-meals',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const { sessionId } = request.cookies
+
+      const totalMeals = await knex('diet')
+        .count({ count: '*' })
+        .where('user_id', sessionId)
+        .first()
+
+      reply.status(200).send({
+        meals: {
+          total: totalMeals?.count || 0,
+        },
+      })
+    },
+  )
+
+  app.get(
+    '/in-accordance',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const { sessionId } = request.cookies
+
+      const totalMealsInAccordance = await knex('diet')
+        .count({ count: '*' })
+        .where({ user_id: sessionId, in_accordance: true })
+        .first()
+
+      reply.status(200).send({
+        meals: {
+          count: totalMealsInAccordance?.count || 0,
+        },
+      })
+    },
+  )
+
+  app.get(
+    '/not-in-accordance',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const { sessionId } = request.cookies
+
+      const totalMealsInAccordance = await knex('diet')
+        .count({ count: '*' })
+        .where({ user_id: sessionId, in_accordance: false })
+        .first()
+
+      reply.status(200).send({
+        meals: {
+          count: totalMealsInAccordance?.count || 0,
+        },
+      })
     },
   )
 }
