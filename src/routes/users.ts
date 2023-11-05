@@ -3,7 +3,6 @@ import { knex } from '../database'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { checkSessionIdExists } from '../prehandlers/check-session-id-exists'
-import { checkUserMatchSessionid } from '../prehandlers/check-user-match-session-id'
 import { hashPassword } from '../utils/hash-password'
 
 export async function usersRoutes(app: FastifyInstance) {
@@ -42,7 +41,7 @@ export async function usersRoutes(app: FastifyInstance) {
 
   app.get(
     '/:id',
-    { preHandler: [checkSessionIdExists, checkUserMatchSessionid] },
+    { preHandler: [checkSessionIdExists] },
     async (request, reply) => {
       const getUsersParamsSchema = z.object({
         id: z.string().uuid(),
@@ -58,7 +57,7 @@ export async function usersRoutes(app: FastifyInstance) {
 
   app.put(
     '/:id',
-    { preHandler: [checkSessionIdExists, checkUserMatchSessionid] },
+    { preHandler: [checkSessionIdExists] },
     async (request, reply) => {
       const putUserParamsSchema = z.object({
         id: z.string().uuid(),
@@ -93,7 +92,7 @@ export async function usersRoutes(app: FastifyInstance) {
 
   app.delete(
     '/:id',
-    { preHandler: [checkSessionIdExists, checkUserMatchSessionid] },
+    { preHandler: [checkSessionIdExists] },
     async (request, reply) => {
       const deleteUserParamsSchema = z.object({
         id: z.string().uuid(),
