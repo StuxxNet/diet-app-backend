@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { FastifyInstance } from 'fastify'
 import { knex } from '../database'
 import { z } from 'zod'
@@ -14,55 +15,69 @@ export async function usersRoutes(app: FastifyInstance) {
       password: z.string(),
     })
 
-    // eslint-disable-next-line camelcase
     const { name, born_date, email, password } = createUserBodySchema.parse(
       request.body,
     )
     const hashedPassword = await hashPassword(password, 10)
 
+    const sessionId = randomUUID()
+
     try {
       await knex('users').insert({
-        id: randomUUID(),
+        id: sessionId,
         name,
         born_date: new Date(born_date),
         email,
         password: hashedPassword,
       })
-    } catch (e) {
-      e.errno === '19'
-        ? reply.status(409).send({
-            error: 'User already exists',
-          })
-        : reply.status(500).send()
-    }
 
-    return reply.status(201).send()
+      reply.cookie('sessionId', sessionId, {
+        path: '/',
+        maxAge: 1000 * 60 * 60, // Set 1h cookie
+      })
+
+      return reply.status(201).send()
+    } catch (error) {
+      error.errno === 19
+        ? reply.status(409).send({
+            error: 'This e-mail is already registered',
+            error_code: error.errno,
+            error_type: error.code,
+          })
+        : reply.status(500).send({
+            error: 'Generic error',
+            error_code: error.errno,
+            error_type: error.code,
+          })
+    }
   })
 
   app.get(
-    '/:id',
+    '/',
     { preHandler: [checkSessionIdExists] },
     async (request, reply) => {
-      const getUsersParamsSchema = z.object({
-        id: z.string().uuid(),
-      })
+      const { sessionId } = request.cookies
 
-      const { id } = getUsersParamsSchema.parse(request.params)
-
-      const user = await knex('users').select('*').where('id', id).first()
-
-      return reply.status(200).send(user)
+      try {
+        const user = await knex('users')
+          .select('*')
+          .where({ id: sessionId })
+          .first()
+        return reply.status(200).send(user)
+      } catch (error) {
+        return reply.status(500).send({
+          error: 'Generic error',
+          error_code: error.errno,
+          error_type: error.code,
+        })
+      }
     },
   )
 
   app.put(
-    '/:id',
+    '/',
     { preHandler: [checkSessionIdExists] },
     async (request, reply) => {
-      const putUserParamsSchema = z.object({
-        id: z.string().uuid(),
-      })
-
       const putUserBodySchema = z.object({
         name: z.string(),
         born_date: z.string(),
@@ -70,43 +85,65 @@ export async function usersRoutes(app: FastifyInstance) {
         password: z.string(),
       })
 
-      const { id } = putUserParamsSchema.parse(request.params)
+      const { sessionId } = request.cookies
 
-      // eslint-disable-next-line camelcase
       const { name, born_date, email, password } = putUserBodySchema.parse(
         request.body,
       )
 
-      await knex('users')
-        .update({
-          name,
-          born_date: new Date(born_date),
-          email,
-          password,
-        })
-        .where('id', id)
+      try {
+        await knex('users')
+          .update({
+            name,
+            born_date: new Date(born_date),
+            email,
+            password,
+          })
+          .where('id', sessionId)
 
-      return reply.status(204).send()
+        return reply.status(204).send()
+      } catch (error) {
+        error.errno === 19
+          ? reply.status(409).send({
+              error: 'This e-mail is already registered',
+              error_code: error.errno,
+              error_type: error.code,
+            })
+          : reply.status(500).send({
+              error: 'Generic error',
+              error_code: error.errno,
+              error_type: error.code,
+            })
+      }
     },
   )
 
   app.delete(
-    '/:id',
+    '/',
     { preHandler: [checkSessionIdExists] },
     async (request, reply) => {
       const deleteUserParamsSchema = z.object({
         id: z.string().uuid(),
       })
 
-      const { id } = deleteUserParamsSchema.parse(request.params)
+      const sessionid = request.cookies
 
-      await knex('users').delete('*').where('id', id)
+      try {
+        await knex('users').delete('*').where('id', sessionid)
 
-      reply.cookie('sessionId', id, {
-        path: '/',
-        maxAge: 0, // Set expired cookie
-      })
-      return reply.status(204).send()
+        reply.cookie('sessionId', sessionid, {
+          path: '/',
+          maxAge: 0, // Set expired cookie
+        })
+
+        return reply.status(204).send()
+      } catch (error) {
+        return reply.status(500).send({
+          error: 'Generic error',
+          error_code: error.errno,
+          error_type: error.code,
+        })
+      }
     },
   )
 }
