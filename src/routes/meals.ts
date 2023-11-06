@@ -177,4 +177,34 @@ export async function mealsRoutes(app: FastifyInstance) {
       })
     },
   )
+
+  app.get(
+    '/streak',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const { sessionId } = request.cookies
+
+      const meals = await knex('diet')
+        .select('in_accordance')
+        .where('user_id', sessionId)
+
+      let biggestStreak = 0
+      let counter = 0
+      meals.forEach((meals) => {
+        console.log(meals)
+        if (meals.in_accordance) {
+          counter++
+          if (counter > biggestStreak) {
+            biggestStreak = counter
+          }
+        } else {
+          counter = 0
+        }
+      })
+
+      reply.status(200).send({
+        streak: biggestStreak,
+      })
+    },
+  )
 }
