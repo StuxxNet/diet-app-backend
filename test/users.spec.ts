@@ -19,27 +19,12 @@ describe('UsersRoute', () => {
 
   describe('when everything is configured right', () => {
     it('should be able to create a new user', async () => {
-      const response = await request(app.server).post('/users').send({
-        name: 'Ramon Borges',
-        born_date: '07/04/1994',
-        email: 'ramonboorges@gmail.com',
-        password: 'abc1234',
-      })
-
-      expect(response.statusCode).toEqual(201)
+      const { statusCode } = await createUser()
+      expect(statusCode).toEqual(201)
     })
 
     it('should be able to get a created user', async () => {
-      const userCreationResponse = await request(app.server)
-        .post('/users')
-        .send({
-          name: 'Ramon Borges',
-          born_date: '07/04/1994',
-          email: 'ramonboorges@gmail.com',
-          password: 'abc1234',
-        })
-      const cookies = userCreationResponse.headers['set-cookie']
-
+      const { cookies } = await createUser()
       const response = await request(app.server)
         .get('/users')
         .set('Cookie', cookies)
@@ -47,5 +32,45 @@ describe('UsersRoute', () => {
 
       expect(response.statusCode).toEqual(200)
     })
+
+    it('should be able to edit a user', async () => {
+      const { cookies } = await createUser()
+      const response = await request(app.server)
+        .put('/users')
+        .set('Cookie', cookies)
+        .send({
+          name: 'Ramon Silveira Borges',
+          born_date: '07/04/1994',
+          email: 'ramonboorges@gmail.com',
+          password: 'abc1234',
+        })
+
+      expect(response.statusCode).toEqual(204)
+    })
+
+    it('should be able to delete a user', async () => {
+      const { cookies } = await createUser()
+      const response = await request(app.server)
+        .delete('/users')
+        .set('Cookie', cookies)
+        .send()
+
+      expect(response.statusCode).toEqual(204)
+    })
   })
 })
+
+async function createUser(): Promise<{ statusCode: number; cookies: string }> {
+  const userCreationResponse = await request(app.server).post('/users').send({
+    name: 'Ramon Borges',
+    born_date: '07/04/1994',
+    email: 'ramonboorges@gmail.com',
+    password: 'abc1234',
+  })
+  const cookies = userCreationResponse.headers['set-cookie']
+
+  return {
+    statusCode: userCreationResponse.statusCode,
+    cookies,
+  }
+}
