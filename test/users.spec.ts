@@ -8,11 +8,6 @@ describe('UsersRoute', () => {
     await app.ready()
   })
 
-  beforeEach(() => {
-    execSync('npm run knex migrate:rollback --all')
-    execSync('npm run knex migrate:latest')
-  })
-
   afterAll(async () => {
     await app.close()
   })
@@ -61,16 +56,23 @@ describe('UsersRoute', () => {
 })
 
 async function createUser(): Promise<{ statusCode: number; cookies: string }> {
-  const userCreationResponse = await request(app.server).post('/users').send({
-    name: 'Ramon Borges',
-    born_date: '07/04/1994',
-    email: 'ramonboorges@gmail.com',
-    password: 'abc1234',
-  })
+  const username = generateRandomString()
+  const userCreationResponse = await request(app.server)
+    .post('/users')
+    .send({
+      name: 'Ramon Borges',
+      born_date: '07/04/1994',
+      email: `${username}@gmail.com`,
+      password: 'abc1234',
+    })
   const cookies = userCreationResponse.headers['set-cookie']
 
   return {
     statusCode: userCreationResponse.statusCode,
     cookies,
   }
+}
+
+function generateRandomString() {
+  return Math.random().toString(20).substr(2, 6)
 }

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "test": "vitest",
+    "test": "source .env.test npm run && knex migrate:rollback --all && npm run knex migrate:latest && vitest",
     "knex": "node --no-warnings --loader tsx ./node_modules/.bin/knex",
     "build": "tsup src --out-dir build",
     "lint": "eslint src --ext .ts --fix"
