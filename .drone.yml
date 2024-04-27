@@ -1,6 +1,7 @@
 kind: pipeline
-name: NodeJS CI
 type: docker
+os: linux
+name: NodeJS CI
 
 steps:
 - name: test
