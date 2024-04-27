@@ -1,7 +1,10 @@
 kind: pipeline
 type: docker
-os: linux
-name: NodeJS CI
+name: default
+
+platform:
+  os: darwin
+  arch: arm64
 
 steps:
 - name: test
@@ -9,3 +12,7 @@ steps:
   commands:
   - npm install
   - npm test
+
+trigger:
+  branch:
+  - main
